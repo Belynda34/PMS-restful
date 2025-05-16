@@ -14,7 +14,7 @@ const isAuthenticated = async (req, res, next) => {
     }
     try {
         const decodedToken = jwt.verify(accessToken, process.env.ACCESS_JWT_SECRET)
-        console.log("Authorization Header:", req.headers.authorization);
+        // console.log("Authorization Header:", req.headers.authorization);
         req.user = decodedToken
         next()
 

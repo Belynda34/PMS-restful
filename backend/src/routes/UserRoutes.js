@@ -10,7 +10,9 @@ const router = express.Router()
 router.post('/register',register)
 router.post('/login',login)
 
-router.use(isAuthenticated);
+
+
+router.use(isAuthenticated)
 
 router.get('/users/current',getUserProfile);
 

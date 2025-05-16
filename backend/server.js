@@ -15,7 +15,7 @@ app.use(express.json());
 
 // app.use(cors());
 
-
+app.use(cors())
 
 app.use("/api/auth", UserRoutes);
 app.use("/api/slots", SlotRoutes);

@@ -1,11 +1,12 @@
 const express = require("express");
 const { createBooking, updateBooking, deleteBooking, approveBooking, rejectBooking,getAllBookings, getUserBookings} = require("../controllers/Booking");
 const { isAuthenticated } = require("../middlewares/Authenticated");
-
+const { restrictToAdmin } = require("../middlewares/authorize");
 
 
 
 const router = express.Router()
+
 
 
 router.use(isAuthenticated);

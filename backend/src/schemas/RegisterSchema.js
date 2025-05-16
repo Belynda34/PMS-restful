@@ -32,6 +32,14 @@ const registerValidation = Joi.object({
     .optional()
     .messages({
       'string.pattern.base': 'Please provide a valid phone number'
+    }),
+     role: Joi.string()
+    .valid('USER', 'ADMIN') // Only allow these roles
+    .default('USER')
+    .optional()
+    .messages({
+      'string.base': 'Role must be a string',
+      'any.only': 'Role must be either USER or ADMIN'
     })
 });
 
@@ -42,7 +50,7 @@ const parkingSlotSchema = Joi.object({
   price: Joi.number().positive().required(),
   type: Joi.string().valid("Standard", "Disabled").required(),
   location: Joi.string().required(),
-  status: Joi.string().valid("Available", "Booked", "Pending").default("Available"),
+  status: Joi.string().valid("Available", "unavailable", "pending").default("Available"),
   bookings: Joi.array().items(Joi.object({
     // Define the structure for each booking object here
     // Example: 
@@ -58,7 +66,7 @@ const parkingSlotSchema = Joi.object({
 const bookingSchema = Joi.object({
   userId: Joi.number().integer().required(),
   slotId: Joi.number().integer().required(),
-  status: Joi.string().valid("Pending", "Accepted", "Rejected").default("Pending"),
+  status: Joi.string().valid("pending", "approved", "rejected").default("Pending"),
 });
 
 module.exports = {registerValidation,parkingSlotSchema,bookingSchema};

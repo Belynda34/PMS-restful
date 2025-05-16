@@ -4,21 +4,9 @@ const jwt =  require("jsonwebtoken");
 const  {registerValidation} = require("../schemas/RegisterSchema.js")
 const nodemailer = require("nodemailer")
 
-
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-
-
 const register = async (req, res) => {
   try {
-    const { username, email, password, phone, otp } = req.body;
+    const { username, email, password, phone,role} = req.body;
 
     // Validate registration input
     const { error } = registerValidation.validate(req.body);
@@ -26,44 +14,19 @@ const register = async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    // Check if the OTP is valid
-    // const otpRecord = await prisma.otp.findFirst({
-    //   where: {
-    //     email,
-    //     expiresAt: {
-    //       gte: new Date(),
-    //     },
-    //   },
-    //   orderBy: {
-    //     expiresAt: "desc",
-    //   },
-    // });
-
-    // if (!otpRecord) {
-    //   return res.status(400).json({ message: "Invalid or expired OTP" });
-    // }
-
-    // const isOtpValid = await bcrypt.compare(otp, otpRecord.otp);
-    // if (!isOtpValid) {
-    //   return res.status(400).json({ message: "Invalid OTP" });
-    // }
-
-    // Check if the user already exists
     const currentUser = await prisma.user.findUnique({ where: { email } });
     if (currentUser) {
       return res.status(409).json({ message: "User already exists" });
     }
 
-    
     const hashedPassword = await bcrypt.hash(password, 10);
-
-
     const newUser = await prisma.user.create({
       data: {
         username,
         email,
         password: hashedPassword,
         phone,
+        role
       },
     });
 
@@ -99,9 +62,9 @@ const login = async (req, res) => {
     }
 
     const accessToken = jwt.sign(
-      { id: currentUser.id, email: currentUser.email },
+      { id: currentUser.id, email: currentUser.email,role:currentUser.role },
       process.env.ACCESS_JWT_SECRET,
-      { expiresIn: "60m" }
+      { expiresIn: "2h" }
     );
 
 
@@ -144,3 +107,41 @@ const getUserProfile = async (req, res) => {
 
 
 module.exports ={register,login,getUserProfile}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Check if the OTP is valid
+    // const otpRecord = await prisma.otp.findFirst({
+    //   where: {
+    //     email,
+    //     expiresAt: {
+    //       gte: new Date(),
+    //     },
+    //   },
+    //   orderBy: {
+    //     expiresAt: "desc",
+    //   },
+    // });
+
+    // if (!otpRecord) {
+    //   return res.status(400).json({ message: "Invalid or expired OTP" });
+    // }
+
+    // const isOtpValid = await bcrypt.compare(otp, otpRecord.otp);
+    // if (!isOtpValid) {
+    //   return res.status(400).json({ message: "Invalid OTP" });
+    // }
+
+    // Check if the user already exists

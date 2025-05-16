@@ -1,6 +1,7 @@
 const prisma = require("../config/db");
 const { bookingSchema } = require("../schemas/RegisterSchema");
 const { updateSlot } = require("./SlotControllers");
+const {sendEmail} = require("../utils/Email")
 
 const createBooking = async (req, res) => {
   const { slotId } = req.body;
@@ -13,9 +14,13 @@ const createBooking = async (req, res) => {
     const slot = await prisma.parkingSlot.findUnique({
       where: { id: parseInt(slotId) },
     });
-    if (!slot || slot.status !== "Available") {
-      return res.status(400).json({ error: "Invalid or unavailable slot" });
+    if(!slot){
+      return res.status(400).json({ error: "Invalid slot" });
     }
+    if (slot.status !== "Available") {
+      return res.status(400).json({ error: "Unavailable slot" });
+    }
+    
 
     const newRequest = await prisma.booking.create({
       data: {
@@ -25,6 +30,12 @@ const createBooking = async (req, res) => {
         status: "pending",
       },
     });
+    
+    await prisma.parkingSlot.update({
+      where: { id: parseInt(slotId) },
+      data: { status: "pending" },  // or "Booked" if you want
+    });
+
     res
       .status(201)
       .json({ message: "Request sent successfully", data: newRequest });
@@ -67,6 +78,7 @@ const updateBooking = async (req, res) => {
 
       },
     });
+
     res.status(200).json({ message: "Slot updated successfully", data: updatedBooking });
   } catch (error) {
      console.error("Error in updating booking:", error.message);
@@ -102,6 +114,7 @@ const deleteBooking = async(req,res) => {
 }
 
 
+//ADMIN
 
 const approveBooking =  async(req,res) => {
     const { id } = req.params; 
@@ -129,7 +142,20 @@ const approveBooking =  async(req,res) => {
       },
     });
 
-    res.status(200).json({ message: "Booking rejected", data: updatedBooking });
+      
+    const user = await prisma.user.findUnique({ where: { id: booking.userId } });
+    if (!user) {
+      console.error('User not found for email notification');
+    } else {
+      // Send approval email
+      await sendEmail({
+        to: user.email,
+        subject: 'Parking Slot Request Approved',
+        text: `Dear ${user.username},\n\nYour request for parking slot ${booking.spotId} has been approved.\n\nThank you,\nParking System Team`,
+      });
+    }
+
+    res.status(200).json({ message: "Booking Approved", data: updatedBooking });
 
     } catch (error) {
         console.error(error);
@@ -137,6 +163,8 @@ const approveBooking =  async(req,res) => {
     }
 }
 
+
+//ADMIN
 
 const rejectBooking =  async(req,res) => {
     const { id } = req.params; 
@@ -168,6 +196,8 @@ const rejectBooking =  async(req,res) => {
 
 
 
+//ADMIN
+
 // Fetch all requests (Admin only)
 const getAllBookings = async (req, res) => {
   try {
@@ -182,7 +212,7 @@ const getAllBookings = async (req, res) => {
       },
     });
 
-    res.status(200).json({ data: bookings });
+    res.status(200).json({ bookings: bookings });
   } catch (error) {
     console.error("Error fetching all requests:", error.message);
     res.status(500).json({ error: "Server error" });
@@ -190,6 +220,8 @@ const getAllBookings = async (req, res) => {
 };
 
 
+
+//USER
 const getUserBookings = async (req, res) => {
   try {
     const userId = req.user.id;  // Extract user ID from the authenticated user
